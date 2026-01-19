@@ -1,0 +1,8 @@
+{
+  "name": "Justicia AI - Suite Legal Inteligente",
+  "description": "Una plataforma integral para la gestión de procesos judiciales (Tutelas, Hábeas Corpus y Desacatos) potenciada por inteligencia artificial para análisis de hechos y generación de providencias.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

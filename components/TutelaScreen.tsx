@@ -17,15 +17,14 @@ const TutelaScreen: React.FC = () => {
     try {
       const data = await analyzeLegalDocument(text, 'Acción de Tutela');
       setResult(data);
-    } catch (err) {
-      alert("Error en el análisis jurídico.");
+    } catch (err: any) {
+      alert("Error en el análisis jurídico: " + (err.message || "Error desconocido"));
     } finally {
       setIsAnalyzing(false);
     }
   };
 
   const handleClear = () => {
-    // Hard reset para evitar que el texto vuelva a aparecer
     setText("");
     setResult(null);
     setFileName(null);
@@ -49,7 +48,6 @@ const TutelaScreen: React.FC = () => {
       if (base64Data) {
         try {
           const extractedText = await extractTextFromFile(base64Data, file.type);
-          // Solo actualizamos si no se ha limpiado el formulario mientras cargaba
           if (fileInputRef.current?.value !== "") {
             setText(extractedText);
           }
@@ -77,14 +75,14 @@ const TutelaScreen: React.FC = () => {
             <h1 className="text-white text-3xl font-black uppercase tracking-tighter">Acción de Tutela</h1>
           </div>
           <div className="flex gap-3">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept=".pdf" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".pdf"
               onChange={handleFileChange}
             />
-            <button 
+            <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isExtracting || isAnalyzing}
               className="flex items-center gap-2 bg-primary/10 border border-primary/40 text-primary px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-primary/20 transition-all disabled:opacity-50"
@@ -92,7 +90,7 @@ const TutelaScreen: React.FC = () => {
               <span className="material-symbols-outlined text-sm">{isExtracting ? 'sync' : 'picture_as_pdf'}</span>
               {isExtracting ? 'Leyendo PDF...' : 'Cargar PDF (OCR)'}
             </button>
-            <button 
+            <button
               onClick={handleClear}
               className="flex items-center gap-2 bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-xs font-black uppercase transition-all"
             >
@@ -109,15 +107,15 @@ const TutelaScreen: React.FC = () => {
                 <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Hechos y Pretensiones</h3>
                 {isExtracting && <span className="animate-pulse text-primary text-[10px] font-bold">IA procesando documento...</span>}
               </div>
-              <textarea 
-                className="w-full h-[550px] bg-[#111418] border-none text-[#d0d6dc] text-sm font-mono p-8 focus:ring-0 outline-none resize-none placeholder:text-gray-800 leading-relaxed" 
+              <textarea
+                className="w-full h-[550px] bg-[#111418] border-none text-[#d0d6dc] text-sm font-mono p-8 focus:ring-0 outline-none resize-none placeholder:text-gray-900 leading-relaxed"
                 placeholder="Pegue el contenido o cargue un PDF para lectura automática..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 disabled={isExtracting}
               />
               <div className="p-5 bg-[#161b21] border-t border-[#293038]">
-                <button 
+                <button
                   onClick={handleRunAnalysis}
                   disabled={isAnalyzing || isExtracting || !text.trim()}
                   className="w-full bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl flex items-center justify-center gap-3 transition-all disabled:opacity-20 shadow-xl shadow-blue-900/20 uppercase text-xs"
@@ -132,7 +130,7 @@ const TutelaScreen: React.FC = () => {
           <div className="flex flex-col gap-6">
             {result ? (
               <div className="animate-fade-in flex flex-col gap-6 h-full">
-                <div className="bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden border border-gray-200 flex flex-col h-full">
+                <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col h-full">
                   <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-gray-400">history_edu</span>

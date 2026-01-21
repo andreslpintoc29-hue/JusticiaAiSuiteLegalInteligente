@@ -15,10 +15,56 @@ const HabeasCorpusScreen: React.FC = () => {
     if (!text.trim()) return alert("No hay información para analizar.");
     setIsAnalyzing(true);
     try {
-      const data = await analyzeLegalDocument(text, 'Hábeas Corpus (Control de Captura)');
-      setResult(data);
-    } catch (err) {
-      alert("Error al procesar el Hábeas Corpus.");
+      // Sistema de limpieza ultra-agresivo para eliminar HTML
+      const ultraCleanText = (str: string) => {
+        if (!str) return "";
+
+        // 1. Eliminar bloques de código markdown si existen
+        let temp = str.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+
+        // 2. Eliminar bloques de estilo o scripts que la IA pudiera inventar
+        temp = temp.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+
+        // 3. Usar DOMParser del navegador (el estándar más confiable)
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(temp, 'text/html');
+          temp = doc.body.textContent || doc.body.innerText || temp;
+        } catch (e) {
+          // Fallback a regex si el parser falla
+          temp = temp.replace(/<[^>]+>/g, '');
+        }
+
+        // 4. Limpieza final por si el parser dejó etiquetas huérfanas
+        temp = temp.replace(/<[^>]+>/g, '');
+
+        // 5. Normalizar entidades HTML comunes
+        const entities: { [key: string]: string } = {
+          '&nbsp;': ' ', '&quot;': '"', '&lt;': '<', '&gt;': '>', '&amp;': '&'
+        };
+        Object.keys(entities).forEach(key => {
+          temp = temp.replace(new RegExp(key, 'g'), entities[key]);
+        });
+
+        return temp.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+      };
+
+      const strictFormatPrompt = `Hábeas Corpus (Control de Captura). 
+      !!! IMPORTANTE: NO USAR ABSOLUTAMENTE NADA DE CÓDIGO HTML (div, styles, p, strong, br). 
+      ENTREGAR SOLO TEXTO PLANO LIMPIO Y ORGANIZADO CON SALTOS DE LÍNEA.`;
+
+      const data = await analyzeLegalDocument(text, strictFormatPrompt);
+
+      if (data && data.draftContent) {
+        // Aplicamos la limpieza ultra-agresiva
+        const cleanedContent = ultraCleanText(data.draftContent);
+        setResult({ ...data, draftContent: cleanedContent });
+      } else {
+        setResult(data);
+      }
+    } catch (err: any) {
+      alert("Error al procesar el Hábeas Corpus: " + (err.message || "Error desconocido"));
     } finally {
       setIsAnalyzing(false);
     }
@@ -60,69 +106,93 @@ const HabeasCorpusScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-1 overflow-hidden h-full flex-col">
-       <header className="flex flex-col gap-4 border-b border-border-dark bg-[#111418] px-6 py-4">
-          <div className="flex items-center text-xs text-[#9dabb9] font-bold uppercase tracking-widest">
-              <span className="material-symbols-outlined text-sm mr-2 text-primary">security</span>
+    <div className="flex-1 overflow-y-auto p-6 lg:px-12 pb-20 custom-scrollbar">
+      <div className="max-w-[1200px] mx-auto flex flex-col gap-8">
+        <div className="flex flex-wrap justify-between items-end gap-4 border-b border-[#293038] pb-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-[#9dabb9] text-sm font-medium">
+              <span className="material-symbols-outlined text-xs">security</span>
               <span>Constitución Política</span>
-              <span className="mx-2 text-gray-700">/</span>
-              <span className="text-white">Hábeas Corpus</span>
+              <span className="material-symbols-outlined text-xs">chevron_right</span>
+              <span>Hábeas Corpus</span>
+            </div>
+            <h1 className="text-white text-3xl font-black uppercase tracking-tighter">Hábeas Corpus</h1>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Derecho de Libertad</h2>
-                  <p className="text-[10px] text-red-500 uppercase font-black tracking-widest">Trámite Preferente - Resolución en 36 horas</p>
-              </div>
-              <div className="flex gap-2">
-                  <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
-                  <button onClick={() => fileInputRef.current?.click()} disabled={isExtracting} className="flex items-center gap-2 rounded-lg border border-primary text-primary px-4 py-2 text-[10px] font-black uppercase hover:bg-primary/10 transition-all">
-                      <span className="material-symbols-outlined text-[18px]">upload</span> {isExtracting ? 'Leyendo...' : 'PDF (OCR)'}
-                  </button>
-                  <button onClick={handleClear} className="flex items-center gap-2 rounded-lg border border-red-500 text-red-500 px-4 py-2 text-[10px] font-black uppercase hover:bg-red-500/10 transition-all">
-                      <span className="material-symbols-outlined text-[18px]">backspace</span> Limpiar
-                  </button>
-                  <button onClick={handleRunAnalysis} disabled={isAnalyzing || isExtracting || !text.trim()} className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-[10px] font-black uppercase text-white hover:bg-blue-600 shadow-xl shadow-blue-900/40 disabled:opacity-20 transition-all">
-                      <span className="material-symbols-outlined text-[18px]">{isAnalyzing ? 'sync' : 'gavel'}</span>
-                      {isAnalyzing ? 'Proyectando Fallo...' : 'Resolver Hábeas'}
-                  </button>
-              </div>
+          <div className="flex gap-3">
+            <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={handleFileChange} />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isExtracting || isAnalyzing}
+              className="flex items-center gap-2 bg-primary/10 border border-primary/40 text-primary px-4 py-2 rounded-lg text-xs font-black uppercase hover:bg-primary/20 transition-all disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-sm">{isExtracting ? 'sync' : 'picture_as_pdf'}</span>
+              {isExtracting ? 'Leyendo PDF...' : 'Cargar PDF (OCR)'}
+            </button>
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-2 bg-red-500/10 border border-red-500/50 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg text-xs font-black uppercase transition-all"
+            >
+              <span className="material-symbols-outlined text-sm">delete_sweep</span>
+              Limpiar
+            </button>
           </div>
-      </header>
+        </div>
 
-      <div className="flex flex-1 overflow-hidden">
-          <div className="w-1/2 flex flex-col bg-[#0d1216] border-r border-border-dark shadow-inner">
-              <div className="p-3 border-b border-border-dark bg-[#111418] flex items-center justify-between px-6">
-                <span className="text-[9px] text-[#9dabb9] font-black uppercase tracking-[0.2em]">Petición de Libertad</span>
-                {fileName && <span className="text-[9px] text-primary font-mono">{fileName}</span>}
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="flex flex-col gap-4">
+            <div className="bg-[#1e242b] rounded-xl border border-[#293038] overflow-hidden shadow-2xl">
+              <div className="p-4 bg-[#161b21] border-b border-[#293038] flex items-center justify-between">
+                <h3 className="text-white font-bold text-[10px] uppercase tracking-widest">Petición de Libertad</h3>
+                {isExtracting && <span className="animate-pulse text-primary text-[10px] font-bold">IA procesando documento...</span>}
               </div>
-              <textarea 
-                className="flex-1 bg-transparent p-10 text-white font-mono text-base resize-none outline-none leading-relaxed placeholder:text-gray-900"
-                placeholder="Pegue la solicitud o adjunte el documento PDF para lectura por IA..."
+              <textarea
+                className="w-full h-[550px] bg-[#111418] border-none text-[#d0d6dc] text-sm font-mono p-8 focus:ring-0 outline-none resize-none placeholder:text-gray-800 leading-relaxed"
+                placeholder="Pegue la solicitud o cargue un PDF para lectura automática..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 disabled={isExtracting}
               />
+              <div className="p-5 bg-[#161b21] border-t border-[#293038]">
+                <button
+                  onClick={handleRunAnalysis}
+                  disabled={isAnalyzing || isExtracting || !text.trim()}
+                  className="w-full bg-primary hover:bg-blue-600 text-white font-black py-4 rounded-xl flex items-center justify-center gap-3 transition-all disabled:opacity-20 shadow-xl shadow-blue-900/20 uppercase text-xs"
+                >
+                  <span className="material-symbols-outlined">{isAnalyzing ? 'sync' : 'auto_awesome'}</span>
+                  {isAnalyzing ? 'Proyectando Fallo...' : 'Resolver Hábeas Corpus'}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="w-1/2 flex flex-col bg-[#111418]">
-              {result ? (
-                <div className="flex-1 flex flex-col animate-fade-in bg-white text-black shadow-2xl">
-                  <div className="p-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest text-center">
-                    Documento Prioritario - Control Jurisdiccional de Libertad
+          <div className="flex flex-col gap-6">
+            {result ? (
+              <div className="animate-fade-in flex flex-col gap-6 h-full">
+                <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200 flex flex-col h-full">
+                  <div className="px-6 py-4 bg-red-600 border-b border-red-700 flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-white">
+                      <span className="material-symbols-outlined text-sm">security</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">Sentencia Prioritaria - Control de Libertad</span>
+                    </div>
+                    <button className="bg-white text-red-600 text-[10px] font-black px-3 py-1 rounded hover:bg-gray-100">DESCARGAR</button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-16 custom-scrollbar text-justify font-serif text-base leading-[1.75]">
-                    <div className="max-w-[65ch] mx-auto whitespace-pre-wrap">
-                       {result.draftContent}
+                  <div className="p-12 h-[550px] overflow-y-auto custom-scrollbar text-black font-serif text-base leading-[1.8] text-justify bg-[#fdfdfd]">
+                    <div className="max-w-prose mx-auto">
+                      <pre className="whitespace-pre-wrap font-serif selection:bg-blue-100">
+                        {result.draftContent}
+                      </pre>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-800 bg-[#111418]">
-                  <span className="material-symbols-outlined text-9xl opacity-5 mb-4">security</span>
-                  <p className="text-[10px] uppercase font-black tracking-[0.5em] opacity-20">Esperando Actuación</p>
-                </div>
-              )}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-[#293038] rounded-2xl text-gray-700 p-12 bg-[#111418]/50">
+                <span className="material-symbols-outlined text-8xl opacity-10 mb-6">history_edu</span>
+                <p className="text-center font-black uppercase text-[10px] tracking-[0.4em] opacity-30">Esperando procesamiento de libertad</p>
+              </div>
+            )}
           </div>
+        </div>
       </div>
     </div>
   );

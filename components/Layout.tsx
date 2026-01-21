@@ -11,8 +11,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navLinks = [
     { path: '/tutela', label: 'Tutela', icon: 'gavel' },
+    { path: '/tutela-integral', label: 'Tutela Integral', icon: 'auto_fix_high' },
     { path: '/habeas-corpus', label: 'Hábeas Corpus', icon: 'balance' },
+    { path: '/habeas-corpus-inteligente', label: 'Hábeas Corpus Int.', icon: 'verified_user' },
     { path: '/desacatos', label: 'Desacato', icon: 'warning' },
+    { path: '/desacato-inteligente', label: 'Desacato Int.', icon: 'notification_important' },
+    { path: '/corte-constitucional', label: 'Corte Constitucional', icon: 'account_balance' },
+    { path: '/apoyo-judicial', label: 'Apoyo Judicial', icon: 'psychology' },
   ];
 
   return (
@@ -23,8 +28,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex flex-col gap-4">
             {/* User Profile / App Header */}
             <div className="flex gap-3 items-center pb-4 border-b border-[#293038]">
-              <div 
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 shadow-inner" 
+              <div
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 shadow-inner"
                 style={{ backgroundImage: 'url("https://picsum.photos/seed/legal/200")' }}
               />
               <div className="flex flex-col">
@@ -34,17 +39,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
             {/* Navigation Links */}
             <nav className="flex flex-col gap-2 mt-2">
-              <Link 
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${location.pathname === '/' || location.pathname === '/inicio' ? 'bg-[#283039] text-white' : 'text-[#9dabb9] hover:bg-[#283039] hover:text-white'}`} 
+              <Link
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${location.pathname === '/' || location.pathname === '/inicio' ? 'bg-[#283039] text-white' : 'text-[#9dabb9] hover:bg-[#283039] hover:text-white'}`}
                 to="/"
               >
                 <span className="material-symbols-outlined">home</span>
                 <p className="text-sm font-medium">Inicio</p>
               </Link>
               {navLinks.map((link) => (
-                <Link 
+                <Link
                   key={link.path}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${location.pathname.startsWith(link.path) ? 'bg-primary/20 border-l-4 border-primary text-white' : 'text-[#9dabb9] hover:bg-[#283039] hover:text-white'}`} 
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors group ${location.pathname.startsWith(link.path) ? 'bg-primary/20 border-l-4 border-primary text-white' : 'text-[#9dabb9] hover:bg-[#283039] hover:text-white'}`}
                   to={link.path}
                 >
                   <span className={`material-symbols-outlined ${location.pathname.startsWith(link.path) ? 'text-primary' : ''}`} data-weight={location.pathname.startsWith(link.path) ? 'fill' : 'normal'}>
